@@ -11,7 +11,7 @@ import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
 import '@uniswap/v3-periphery/contracts/base/LiquidityManagement.sol';
 
 // Uncomment this line to use console.log
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 contract LiquidityProvider {
 
@@ -48,9 +48,22 @@ contract LiquidityProvider {
                 deadline: block.timestamp
             });
 
+        console.log("INFO");
+        console.log("---------------------------------------");
+        console.log("token0: ", token0);
+        console.log("token1: ", token1);
+        console.log("fee: ", poolFee);
+        //console.log("lowerTick: %s", lowerTick);
+        //console.log("upperTick: ", lowerTick);
+        console.log("amount0: ", amount0ToMint);
+        console.log("amount1: ", amount1ToMint);
+        console.log("recipient: ", address(this));
+        console.log("---------------------------------------");
+
         (uint256 amount0, uint256 amount1, , ) = positionManager.mint(params);
 
-        if (amount0 < amount0ToMint) {
+
+        /*if (amount0 < amount0ToMint) {
             TransferHelper.safeApprove(token0, address(positionManager), 0);
             uint256 refund0 = amount0ToMint - amount0;
             TransferHelper.safeTransfer(token0, msg.sender, refund0);
@@ -60,7 +73,7 @@ contract LiquidityProvider {
             TransferHelper.safeApprove(token1, address(positionManager), 0);
             uint256 refund1 = amount1ToMint - amount1;
             TransferHelper.safeTransfer(token1, msg.sender, refund1);
-        }
+        }*/
     } 
 
     function getBordersFromAssets(/*uint256 amount0ToMint, uint256 amount1ToMint, */uint160 width, uint160 sqrtPriceX96) internal pure returns (uint160 pa, uint160 pb) {
