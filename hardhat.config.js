@@ -1,6 +1,7 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("@nomicfoundation/hardhat-ethers");
 require("@typechain/hardhat");
+
 require('dotenv').config();
 
 const { HardhatUserConfig } = require("hardhat/types");
@@ -13,6 +14,8 @@ const config = {
     hardhat: {
       forking: {
         url: process.env.ARBITRUM_URL,
+        block: 314239731,
+        accountsBalance: "10000000000000000000000",
       },
     },
     arbitrum_one: {
