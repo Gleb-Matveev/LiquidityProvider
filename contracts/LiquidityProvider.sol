@@ -19,6 +19,7 @@ contract LiquidityProvider {
 
     // address posManager как связан с пулом
     INonfungiblePositionManager public positionManager;
+    IUniswapV3Factory public uniswapV3Factory;
 
     constructor(address npmAddress) {
         positionManager = INonfungiblePositionManager(
@@ -26,26 +27,42 @@ contract LiquidityProvider {
         );
     }
 
+    function setFactory(address _uniswapV3Factory) public {
+        uniswapV3Factory = IUniswapV3Factory(_uniswapV3Factory);
+    }
+
+    function poolExists(address tokenA, address tokenB, uint24 fee) public view returns (address) {
+        address pool = uniswapV3Factory.getPool(tokenA, tokenB, fee);
+        return pool; 
+    }
+
     function provideLiquidity(address poolAddr, uint256 amount0ToMint, uint256 amount1ToMint, uint160 width) external {
         (address token0, address token1, uint24 poolFee, uint160 sqrtPriceX96, int24 tickSpacing) = getPoolParams(poolAddr);
-        (int24 lowerTick, int24 upperTick) = getTicksFromBorders(/*amount0ToMint, amount1ToMint, */width, sqrtPriceX96); // вынести всю логику
+        //(int24 lowerTick, int24 upperTick) = getTicksFromBorders(/*amount0ToMint, amount1ToMint, */width, sqrtPriceX96); // вынести всю логику
         //address wealth = 0xF977814e90dA44bFA03b6295A0616a897441aceC;
         int24 tick_lower = TickMath.MIN_TICK;
         int24 tick_upper = TickMath.MAX_TICK;
+        int24 price_tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
-        /*if (tick_lower % tickSpacing != 0) {
+        if (tick_lower % tickSpacing != 0) {
             tick_lower = (tick_lower / tickSpacing) * tickSpacing + tickSpacing;
+            console.log("HERE 1");
         }
 
         if (tick_upper % tickSpacing != 0) {
             tick_upper = (tick_upper / tickSpacing) * tickSpacing;
-        }*/
+            console.log("HERE 2");
+        }
 
         IERC20(token0).transferFrom(msg.sender, address(this), amount0ToMint);
         IERC20(token1).transferFrom(msg.sender, address(this), amount1ToMint);
 
         IERC20(token0).approve(address(positionManager), amount0ToMint);
         IERC20(token1).approve(address(positionManager), amount1ToMint);
+
+        IERC20(token0).approve(address(this), amount0ToMint);
+        IERC20(token1).approve(address(this), amount1ToMint);
+
 
         console.log("token0: ", token0);
         console.log("token1: ", token1);
@@ -54,11 +71,13 @@ contract LiquidityProvider {
         //console.log("lowerTick:", lowerTick < 0 ? uint256(-lowerTick) : uint256(lowerTick));
         tick_upper < 0 ? console.log("tick_upper: -", uint256(-tick_upper)) : console.log("tick_upper: ", uint256(tick_upper));
         tick_lower < 0 ? console.log("tick_lower: -", uint256(-tick_lower)) : console.log("tick_lower: ", uint256(tick_lower));
+        price_tick < 0 ? console.log("price_tick: -", uint256(-price_tick)) : console.log("price_tick: ", uint256(price_tick));
+        console.log("price: ", sqrtPriceX96);
         console.log("token0 amt: ", amount0ToMint);
         console.log("token1 amt: ", amount1ToMint);
-        console.log("balance of eth: ", address(this).balance);
         console.log("token0 balance: ", IERC20(token0).balanceOf(address(this)));
         console.log("token1 balance: ", IERC20(token1).balanceOf(address(this)));
+        console.log("balance of eth: ", address(this).balance);
 
         INonfungiblePositionManager.MintParams memory params =
             INonfungiblePositionManager.MintParams({
@@ -69,15 +88,17 @@ contract LiquidityProvider {
                 tickUpper: tick_upper,
                 amount0Desired: amount0ToMint,
                 amount1Desired: amount1ToMint,
-                amount0Min: 0,
-                amount1Min: 0,
+                amount0Min: 10,
+                amount1Min: 10,
                 recipient: msg.sender,
                 deadline: block.timestamp
             });
 
+        //console.log(poolExists(token0, token1, poolFee));
+        //address new_poll = positionManager.createAndInitializeIfNecessary(10, token0, token1, poolFee, sqrtPriceX96);
         //positionManager.totalSupply();
         (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = positionManager.mint(params);
-    } 
+    }
 
     function getBordersFromAssets(/*uint256 amount0ToMint, uint256 amount1ToMint, */uint160 width, uint160 sqrtPriceX96) internal pure returns (uint160 pa, uint160 pb) {
         // проверка на ноль

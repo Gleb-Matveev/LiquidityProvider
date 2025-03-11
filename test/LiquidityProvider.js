@@ -123,21 +123,40 @@ describe("LiquidityProvider", function () {
       console.log("LP a0: ", amountLP0);
       console.log("LP a1: ", amountLP1);
       console.log("Balance of owner:", balance);
+      console.log("Contract address", await liquidityProvider.getAddress());
       //console.log("Balance of contract:", balanceC);
-
       await liquidityProvider.provideLiquidity(pool, amount0, amount1, width, {
-        gasLimit: 300000,  // Increase the gas limit to 1,000,000 (or any required value)
+        gasLimit: 30000000, 
       });
+      //await liquidityProvider.setFactory("0x1F98431c8aD98523631AE4a59f267346ea31F984");
+      /*try {
+        const tx1 = await liquidityProvider.provideLiquidity(pool, amount0, amount1, width, {
+          gasLimit: 300000, 
+        });
+        await tx1.wait();
+      } catch (err) {
+        console.log("Transaction reverted, tracing...");
+      }
+      const trace = await network.provider.send("debug_traceTransaction", [tx1.hash]);
+      console.log("Transaction Trace:", trace);*/
 
-      /*expect(await liquidityProvider.test("0xC6962004f452bE9203591991D15f6b388e09E8D0")).to.equal(500);
+
+      /*await liquidityProvider.provideLiquidity(pool, amount0, amount1, width, {
+        gasLimit: 300000,  
+      });*/
+
+      //expect(await liquidityProvider.test("0xC6962004f452bE9203591991D15f6b388e09E8D0")).to.equal(500);
 
       const positionId = await nfpManager.tokenOfOwnerByIndex(owner, 0);
       const position = await nfpManager.positions(positionId);
 
       const upperPrice = 1.0001 ** Number(position.tickUpper);
-      const lowerPrice = 1.0001 ** Number(position.tickLower)
+      const lowerPrice = 1.0001 ** Number(position.tickLower);
 
-      expect(10000 * (upperPrice - lowerPrice) / (lowerPrice + upperPrice)).to.be.approximately(width, width * 0.1);*/
+      console.log("upperPrice: ", upperPrice)
+      console.log("lowerPrice: ", lowerPrice)
+
+      expect(10000 * (upperPrice - lowerPrice) / (lowerPrice + upperPrice)).to.be.approximately(width, width * 0.1);
     });
   });
 });
