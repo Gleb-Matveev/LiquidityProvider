@@ -30,28 +30,6 @@ describe("LiquidityProvider", function () {
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    //const IMPERSONATED_ACCOUNT = "0x25681Ab599B4E2CEea31F8B498052c53FC2D74db"; // Replace with the actual address
-    /*await hre.network.provider.request({
-        method: "hardhat_impersonateAccount",
-        params: [IMPERSONATED_ACCOUNT],
-    });
-
-    const impersonatedSigner = await ethers.getSigner(IMPERSONATED_ACCOUNT);*/
-
-    /*const tx = await owner.sendTransaction({
-      to: "0x078f358208685046a11C85e8ad32895DED33A249",
-      value: ethers.parseEther("10"), // Sending 1 ETH
-    });
-
-    await tx.wait();*/
-
-    /*await impersonatedSigner.sendTransaction({
-      to: "0xF977814e90dA44bFA03b6295A0616a897441aceC",
-      value: AMOUNT
-    });*/
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////
-
     const address0 = "0x2DF3ace03098deef627B2E78546668Dd9B8EB8bC";
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
@@ -92,8 +70,8 @@ describe("LiquidityProvider", function () {
       console.log(amount1)
 
       expect(await liquidityProvider.positionManager()).to.equal("0xC36442b4a4522E871399CD717aBDD847Ab11FE88");
-      //expect(amount0).to.equal(1000000000n);
-      //expect(amount1).to.equal(2000000000n);
+      expect(amount0).to.equal(100000000);
+      expect(amount1).to.equal(85000000000);
     });
   });
 
@@ -102,11 +80,6 @@ describe("LiquidityProvider", function () {
     it(`Should provide liquidity with width = 10`, async function () {
       const { liquidityProvider, nfpManager, pool, owner, token0, token1 } = await loadFixture(deployContract);
 
-      const amount0 = await token0.balanceOf(owner);
-      const amount1 = await token1.balanceOf(owner);
-      const amountLP0 = await token0.balanceOf(liquidityProvider.getAddress());
-      const amountLP1 = await token1.balanceOf(liquidityProvider.getAddress());
-      const balance = await ethers.provider.getBalance(owner);
       const transferAmount = ethers.parseEther("3");
 
       const tx = await owner.sendTransaction({
@@ -115,6 +88,12 @@ describe("LiquidityProvider", function () {
       });
 
       await tx.wait();
+
+      const amount0 = await token0.balanceOf(owner);
+      const amount1 = await token1.balanceOf(owner);
+      const amountLP0 = await token0.balanceOf(liquidityProvider.getAddress());
+      const amountLP1 = await token1.balanceOf(liquidityProvider.getAddress());
+      const balance = await ethers.provider.getBalance(owner);
       const balanceC = await ethers.provider.getBalance(liquidityProvider.getAddress());
 
       console.log("a0: ", amount0);
@@ -124,28 +103,10 @@ describe("LiquidityProvider", function () {
       console.log("LP a1: ", amountLP1);
       console.log("Balance of owner:", balance);
       console.log("Contract address", await liquidityProvider.getAddress());
-      //console.log("Balance of contract:", balanceC);
+    
       await liquidityProvider.provideLiquidity(pool, amount0, amount1, width, {
         gasLimit: 30000000, 
       });
-      //await liquidityProvider.setFactory("0x1F98431c8aD98523631AE4a59f267346ea31F984");
-      /*try {
-        const tx1 = await liquidityProvider.provideLiquidity(pool, amount0, amount1, width, {
-          gasLimit: 300000, 
-        });
-        await tx1.wait();
-      } catch (err) {
-        console.log("Transaction reverted, tracing...");
-      }
-      const trace = await network.provider.send("debug_traceTransaction", [tx1.hash]);
-      console.log("Transaction Trace:", trace);*/
-
-
-      /*await liquidityProvider.provideLiquidity(pool, amount0, amount1, width, {
-        gasLimit: 300000,  
-      });*/
-
-      //expect(await liquidityProvider.test("0xC6962004f452bE9203591991D15f6b388e09E8D0")).to.equal(500);
 
       const positionId = await nfpManager.tokenOfOwnerByIndex(owner, 0);
       const position = await nfpManager.positions(positionId);
