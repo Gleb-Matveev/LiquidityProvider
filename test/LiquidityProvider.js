@@ -76,7 +76,7 @@ describe("LiquidityProvider", function () {
   });
 
   describe("Maths", function () {
-    const width = 10;
+    const width = 5000;
     it(`Should provide liquidity with width = 10`, async function () {
       const { liquidityProvider, nfpManager, pool, owner, token0, token1 } = await loadFixture(deployContract);
 
@@ -96,6 +96,7 @@ describe("LiquidityProvider", function () {
       const balance = await ethers.provider.getBalance(owner);
       const balanceC = await ethers.provider.getBalance(liquidityProvider.getAddress());
 
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////");
       console.log("a0: ", amount0);
       console.log("a1: ", amount1);
       console.log("width: ", width);
@@ -103,6 +104,7 @@ describe("LiquidityProvider", function () {
       console.log("LP a1: ", amountLP1);
       console.log("Balance of owner:", balance);
       console.log("Contract address", await liquidityProvider.getAddress());
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////\n");
     
       await liquidityProvider.provideLiquidity(pool, amount0, amount1, width, {
         gasLimit: 30000000, 
@@ -116,6 +118,7 @@ describe("LiquidityProvider", function () {
 
       console.log("upperPrice: ", upperPrice)
       console.log("lowerPrice: ", lowerPrice)
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////");
 
       expect(10000 * (upperPrice - lowerPrice) / (lowerPrice + upperPrice)).to.be.approximately(width, width * 0.1);
     });
