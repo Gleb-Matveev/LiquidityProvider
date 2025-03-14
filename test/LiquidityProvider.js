@@ -3,7 +3,7 @@ import { expect } from "chai";
 import hre from "hardhat";
 import { deal } from "hardhat-deal";
 
-function sqrt(value) {
+/*function sqrt(value) {
   if (value < 0n) throw new Error("Negative BigInt");
   if (value < 2n) return value;
   
@@ -24,7 +24,6 @@ function getAmounts(liquidity, sqrtPriceX96, tickLower, tickUpper) {
 
   const Q96 = 2n ** 96n;
 
-  // Вычисляем корни тиков через BigInt (используем приближение через 1.0001 ** tick)
   const sqrtRatioA = sqrt(BigInt(Math.floor(Number((1.0001 ** Number(tickLower)) * Number(Q96)))));
   const sqrtRatioB = sqrt(BigInt(Math.floor(Number((1.0001 ** Number(tickUpper)) * Number(Q96)))));
   const sqrtPrice = sqrtPriceX96;
@@ -44,8 +43,7 @@ function getAmounts(liquidity, sqrtPriceX96, tickLower, tickUpper) {
   console.log(amount0);
   console.log(amount1);
   return { amount0, amount1 };
-}
-
+}*/
 
 describe("LiquidityProvider", function () {
   async function deployContract() {
@@ -74,48 +72,16 @@ describe("LiquidityProvider", function () {
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    const address0 = "0x2DF3ace03098deef627B2E78546668Dd9B8EB8bC";
-    await hre.network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: [address0],
-    });
-
-    const cm0 = await ethers.provider.getSigner(address0);
-    const amount0 = ethers.parseUnits("1", 8);
-    await token0.connect(cm0).transfer(owner, amount0);
-
-    const address1 = "0xF977814e90dA44bFA03b6295A0616a897441aceC";
-    await hre.network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: [address1],
-    });
-
-    const cm1 = await ethers.provider.getSigner(address1);
-    const amount1 = ethers.parseUnits("85000", 6);
-    await token1.connect(cm1).transfer(owner, amount1);
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    console.log("after eth balance 0: ",  await ethers.provider.getBalance("0x2DF3ace03098deef627B2E78546668Dd9B8EB8bC"));
-    console.log("after eth balance 1: ",  await ethers.provider.getBalance("0xF977814e90dA44bFA03b6295A0616a897441aceC"));
-
-    await token0.approve(liquidityProvider, ethers.MaxUint256);
-    await token1.approve(liquidityProvider, ethers.MaxUint256);
-
     return { owner, liquidityProvider, token0, token1, pool, nfpManager };
   }
 
   describe("Deployment", function () {
     it("Should get right npmManager address", async function () {
       const { owner, token0, token1, liquidityProvider } = await loadFixture(deployContract);
-      const amount0 = await token0.balanceOf(owner);
-      const amount1 = await token1.balanceOf(owner);
-      console.log(amount0)
-      console.log(amount1)
 
       expect(await liquidityProvider.positionManager()).to.equal("0xC36442b4a4522E871399CD717aBDD847Ab11FE88");
-      expect(amount0).to.equal(100000000);
-      expect(amount1).to.equal(85000000000);
+      //expect(amount0).to.equal(100000000);
+      //expect(amount1).to.equal(85000000000);
     });
   });
 
@@ -123,6 +89,33 @@ describe("LiquidityProvider", function () {
     let width = 6000;
     it(`Should provide liquidity with width = ${width}`, async function () {
       const { liquidityProvider, nfpManager, pool, owner, token0, token1 } = await loadFixture(deployContract);
+
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      const address0 = "0x2DF3ace03098deef627B2E78546668Dd9B8EB8bC";
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [address0],
+      });
+
+      const cm0 = await ethers.provider.getSigner(address0);
+      const amount0cur = ethers.parseUnits("1", 8);
+      await token0.connect(cm0).transfer(owner, amount0cur);
+
+      const address1 = "0xF977814e90dA44bFA03b6295A0616a897441aceC";
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [address1],
+      });
+
+      const cm1 = await ethers.provider.getSigner(address1);
+      const amount1cur = ethers.parseUnits("85000", 6);
+      await token1.connect(cm1).transfer(owner, amount1cur);
+
+      await token0.approve(liquidityProvider, ethers.MaxUint256);
+      await token1.approve(liquidityProvider, ethers.MaxUint256);
+
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
       const transferAmount = ethers.parseEther("3");
 
@@ -177,9 +170,36 @@ describe("LiquidityProvider", function () {
 
       expect(10000 * (upperPrice - lowerPrice) / (lowerPrice + upperPrice)).to.be.approximately(width, width * 0.1);
     });
-    /*width = 9000;
+    width = 9000;
     it(`Should provide liquidity with width = ${width}}`, async function () {
       const { liquidityProvider, nfpManager, pool, owner, token0, token1 } = await loadFixture(deployContract);
+      
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      const address0 = "0x2DF3ace03098deef627B2E78546668Dd9B8EB8bC";
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [address0],
+      });
+
+      const cm0 = await ethers.provider.getSigner(address0);
+      const amount0cur = ethers.parseUnits("1", 8);
+      await token0.connect(cm0).transfer(owner, amount0cur);
+
+      const address1 = "0xF977814e90dA44bFA03b6295A0616a897441aceC";
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [address1],
+      });
+
+      const cm1 = await ethers.provider.getSigner(address1);
+      const amount1cur = ethers.parseUnits("85000", 6);
+      await token1.connect(cm1).transfer(owner, amount1cur);
+
+      await token0.approve(liquidityProvider, ethers.MaxUint256);
+      await token1.approve(liquidityProvider, ethers.MaxUint256);
+
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
       const transferAmount = ethers.parseEther("3");
 
@@ -222,6 +242,371 @@ describe("LiquidityProvider", function () {
       console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////");
 
       expect(10000 * (upperPrice - lowerPrice) / (lowerPrice + upperPrice)).to.be.approximately(width, width * 0.1);
-    });*/
+    });
+    width = 5000;
+    it(`Should provide liquidity with width = ${width}}`, async function () {
+      const { liquidityProvider, nfpManager, pool, owner, token0, token1 } = await loadFixture(deployContract);
+
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      const address0 = "0x2DF3ace03098deef627B2E78546668Dd9B8EB8bC";
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [address0],
+      });
+
+      const cm0 = await ethers.provider.getSigner(address0);
+      const amount0cur = ethers.parseUnits("1", 8);
+      await token0.connect(cm0).transfer(owner, amount0cur);
+
+      const address1 = "0xF977814e90dA44bFA03b6295A0616a897441aceC";
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [address1],
+      });
+
+      const cm1 = await ethers.provider.getSigner(address1);
+      const amount1cur = ethers.parseUnits("85000", 6);
+      await token1.connect(cm1).transfer(owner, amount1cur);
+
+      await token0.approve(liquidityProvider, ethers.MaxUint256);
+      await token1.approve(liquidityProvider, ethers.MaxUint256);
+
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      const transferAmount = ethers.parseEther("3");
+
+      const tx = await owner.sendTransaction({
+       to: liquidityProvider.getAddress(),
+       value: transferAmount,
+      });
+
+      await tx.wait();
+
+      const amount0 = await token0.balanceOf(owner);
+      const amount1 = await token1.balanceOf(owner);
+      const amountLP0 = await token0.balanceOf(liquidityProvider.getAddress());
+      const amountLP1 = await token1.balanceOf(liquidityProvider.getAddress());
+      const balance = await ethers.provider.getBalance(owner);
+      const balanceC = await ethers.provider.getBalance(liquidityProvider.getAddress());
+
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////");
+      console.log("a0: ", amount0);
+      console.log("a1: ", amount1);
+      console.log("width: ", width);
+      console.log("LP a0: ", amountLP0);
+      console.log("LP a1: ", amountLP1);
+      console.log("Balance of owner:", balance);
+      console.log("Contract address", await liquidityProvider.getAddress());
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////\n");
+    
+      await liquidityProvider.provideLiquidity(pool, amount0, amount1, width, {
+        gasLimit: 30000000, 
+      });
+
+      const positionId = await nfpManager.tokenOfOwnerByIndex(owner, 0);
+      const position = await nfpManager.positions(positionId);
+
+      const upperPrice = 1.0001 ** Number(position.tickUpper);
+      const lowerPrice = 1.0001 ** Number(position.tickLower);
+
+      console.log("upperPrice: ", upperPrice)
+      console.log("lowerPrice: ", lowerPrice)
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////");
+
+      expect(10000 * (upperPrice - lowerPrice) / (lowerPrice + upperPrice)).to.be.approximately(width, width * 0.1);
+    });
+    width = 9950;
+    it(`Should provide liquidity with width = ${width}}`, async function () {
+      const { liquidityProvider, nfpManager, pool, owner, token0, token1 } = await loadFixture(deployContract);
+
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      const address0 = "0x2DF3ace03098deef627B2E78546668Dd9B8EB8bC";
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [address0],
+      });
+
+      const cm0 = await ethers.provider.getSigner(address0);
+      const amount0cur = ethers.parseUnits("5", 8);
+      await token0.connect(cm0).transfer(owner, amount0cur);
+
+      const address1 = "0xF977814e90dA44bFA03b6295A0616a897441aceC";
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [address1],
+      });
+
+      const cm1 = await ethers.provider.getSigner(address1);
+      const amount1cur = ethers.parseUnits("360000", 6);
+      await token1.connect(cm1).transfer(owner, amount1cur);
+
+      await token0.approve(liquidityProvider, ethers.MaxUint256);
+      await token1.approve(liquidityProvider, ethers.MaxUint256);
+
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      const transferAmount = ethers.parseEther("3");
+
+      const tx = await owner.sendTransaction({
+       to: liquidityProvider.getAddress(),
+       value: transferAmount,
+      });
+
+      await tx.wait();
+
+      const amount0 = await token0.balanceOf(owner);
+      const amount1 = await token1.balanceOf(owner);
+      const amountLP0 = await token0.balanceOf(liquidityProvider.getAddress());
+      const amountLP1 = await token1.balanceOf(liquidityProvider.getAddress());
+      const balance = await ethers.provider.getBalance(owner);
+      const balanceC = await ethers.provider.getBalance(liquidityProvider.getAddress());
+
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////");
+      console.log("a0: ", amount0);
+      console.log("a1: ", amount1);
+      console.log("width: ", width);
+      console.log("LP a0: ", amountLP0);
+      console.log("LP a1: ", amountLP1);
+      console.log("Balance of owner:", balance);
+      console.log("Contract address", await liquidityProvider.getAddress());
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////\n");
+    
+      await liquidityProvider.provideLiquidity(pool, amount0, amount1, width, {
+        gasLimit: 30000000, 
+      });
+
+      const positionId = await nfpManager.tokenOfOwnerByIndex(owner, 0);
+      const position = await nfpManager.positions(positionId);
+
+      const upperPrice = 1.0001 ** Number(position.tickUpper);
+      const lowerPrice = 1.0001 ** Number(position.tickLower);
+
+      console.log("upperPrice: ", upperPrice)
+      console.log("lowerPrice: ", lowerPrice)
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////");
+
+      expect(10000 * (upperPrice - lowerPrice) / (lowerPrice + upperPrice)).to.be.approximately(width, width * 0.1);
+    });
+    width = 7500;
+    it(`Should provide liquidity with width = ${width}}`, async function () {
+      const { liquidityProvider, nfpManager, pool, owner, token0, token1 } = await loadFixture(deployContract);
+
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      const address0 = "0x2DF3ace03098deef627B2E78546668Dd9B8EB8bC";
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [address0],
+      });
+
+      const cm0 = await ethers.provider.getSigner(address0);
+      const amount0cur = ethers.parseUnits("10", 8);
+      await token0.connect(cm0).transfer(owner, amount0cur);
+
+      const address1 = "0xF977814e90dA44bFA03b6295A0616a897441aceC";
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [address1],
+      });
+
+      const cm1 = await ethers.provider.getSigner(address1);
+      const amount1cur = ethers.parseUnits("1000000", 6);
+      await token1.connect(cm1).transfer(owner, amount1cur);
+
+      await token0.approve(liquidityProvider, ethers.MaxUint256);
+      await token1.approve(liquidityProvider, ethers.MaxUint256);
+
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      const transferAmount = ethers.parseEther("3");
+
+      const tx = await owner.sendTransaction({
+       to: liquidityProvider.getAddress(),
+       value: transferAmount,
+      });
+
+      await tx.wait();
+
+      const amount0 = await token0.balanceOf(owner);
+      const amount1 = await token1.balanceOf(owner);
+      const amountLP0 = await token0.balanceOf(liquidityProvider.getAddress());
+      const amountLP1 = await token1.balanceOf(liquidityProvider.getAddress());
+      const balance = await ethers.provider.getBalance(owner);
+      const balanceC = await ethers.provider.getBalance(liquidityProvider.getAddress());
+
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////");
+      console.log("a0: ", amount0);
+      console.log("a1: ", amount1);
+      console.log("width: ", width);
+      console.log("LP a0: ", amountLP0);
+      console.log("LP a1: ", amountLP1);
+      console.log("Balance of owner:", balance);
+      console.log("Contract address", await liquidityProvider.getAddress());
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////\n");
+    
+      await liquidityProvider.provideLiquidity(pool, amount0, amount1, width, {
+        gasLimit: 30000000, 
+      });
+
+      const positionId = await nfpManager.tokenOfOwnerByIndex(owner, 0);
+      const position = await nfpManager.positions(positionId);
+
+      const upperPrice = 1.0001 ** Number(position.tickUpper);
+      const lowerPrice = 1.0001 ** Number(position.tickLower);
+
+      console.log("upperPrice: ", upperPrice)
+      console.log("lowerPrice: ", lowerPrice)
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////");
+
+      expect(10000 * (upperPrice - lowerPrice) / (lowerPrice + upperPrice)).to.be.approximately(width, width * 0.1);
+    });
+    width = 5000;
+    it(`Should provide liquidity with width = ${width}}`, async function () {
+      const { liquidityProvider, nfpManager, pool, owner, token0, token1 } = await loadFixture(deployContract);
+
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      const address0 = "0x2DF3ace03098deef627B2E78546668Dd9B8EB8bC";
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [address0],
+      });
+
+      const cm0 = await ethers.provider.getSigner(address0);
+      const amount0cur = ethers.parseUnits("0", 8);
+      await token0.connect(cm0).transfer(owner, amount0cur);
+
+      const address1 = "0xF977814e90dA44bFA03b6295A0616a897441aceC";
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [address1],
+      });
+
+      const cm1 = await ethers.provider.getSigner(address1);
+      const amount1cur = ethers.parseUnits("85000", 6);
+      await token1.connect(cm1).transfer(owner, amount1cur);
+
+      await token0.approve(liquidityProvider, ethers.MaxUint256);
+      await token1.approve(liquidityProvider, ethers.MaxUint256);
+
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      const transferAmount = ethers.parseEther("3");
+
+      const tx = await owner.sendTransaction({
+       to: liquidityProvider.getAddress(),
+       value: transferAmount,
+      });
+
+      await tx.wait();
+
+      const amount0 = await token0.balanceOf(owner);
+      const amount1 = await token1.balanceOf(owner);
+      const amountLP0 = await token0.balanceOf(liquidityProvider.getAddress());
+      const amountLP1 = await token1.balanceOf(liquidityProvider.getAddress());
+      const balance = await ethers.provider.getBalance(owner);
+      const balanceC = await ethers.provider.getBalance(liquidityProvider.getAddress());
+
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////");
+      console.log("a0: ", amount0);
+      console.log("a1: ", amount1);
+      console.log("width: ", width);
+      console.log("LP a0: ", amountLP0);
+      console.log("LP a1: ", amountLP1);
+      console.log("Balance of owner:", balance);
+      console.log("Contract address", await liquidityProvider.getAddress());
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////\n");
+    
+      await liquidityProvider.provideLiquidity(pool, amount0, amount1, width, {
+        gasLimit: 30000000, 
+      });
+
+      const positionId = await nfpManager.tokenOfOwnerByIndex(owner, 0);
+      const position = await nfpManager.positions(positionId);
+
+      const upperPrice = 1.0001 ** Number(position.tickUpper);
+      const lowerPrice = 1.0001 ** Number(position.tickLower);
+
+      console.log("upperPrice: ", upperPrice)
+      console.log("lowerPrice: ", lowerPrice)
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////");
+
+      expect(10000 * (upperPrice - lowerPrice) / (lowerPrice + upperPrice)).to.be.approximately(width, width * 0.1);
+    });
+    width = 5000;
+    it(`Should provide liquidity with width = ${width}}`, async function () {
+      const { liquidityProvider, nfpManager, pool, owner, token0, token1 } = await loadFixture(deployContract);
+
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      const address0 = "0x2DF3ace03098deef627B2E78546668Dd9B8EB8bC";
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [address0],
+      });
+
+      const cm0 = await ethers.provider.getSigner(address0);
+      const amount0cur = ethers.parseUnits("1", 8);
+      await token0.connect(cm0).transfer(owner, amount0cur);
+
+      const address1 = "0xF977814e90dA44bFA03b6295A0616a897441aceC";
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [address1],
+      });
+
+      const cm1 = await ethers.provider.getSigner(address1);
+      const amount1cur = ethers.parseUnits("0", 6);
+      await token1.connect(cm1).transfer(owner, amount1cur);
+
+      await token0.approve(liquidityProvider, ethers.MaxUint256);
+      await token1.approve(liquidityProvider, ethers.MaxUint256);
+
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      const transferAmount = ethers.parseEther("3");
+
+      const tx = await owner.sendTransaction({
+       to: liquidityProvider.getAddress(),
+       value: transferAmount,
+      });
+
+      await tx.wait();
+
+      const amount0 = await token0.balanceOf(owner);
+      const amount1 = await token1.balanceOf(owner);
+      const amountLP0 = await token0.balanceOf(liquidityProvider.getAddress());
+      const amountLP1 = await token1.balanceOf(liquidityProvider.getAddress());
+      const balance = await ethers.provider.getBalance(owner);
+      const balanceC = await ethers.provider.getBalance(liquidityProvider.getAddress());
+
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////");
+      console.log("a0: ", amount0);
+      console.log("a1: ", amount1);
+      console.log("width: ", width);
+      console.log("LP a0: ", amountLP0);
+      console.log("LP a1: ", amountLP1);
+      console.log("Balance of owner:", balance);
+      console.log("Contract address", await liquidityProvider.getAddress());
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////\n");
+    
+      await liquidityProvider.provideLiquidity(pool, amount0, amount1, width, {
+        gasLimit: 30000000, 
+      });
+
+      const positionId = await nfpManager.tokenOfOwnerByIndex(owner, 0);
+      const position = await nfpManager.positions(positionId);
+
+      const upperPrice = 1.0001 ** Number(position.tickUpper);
+      const lowerPrice = 1.0001 ** Number(position.tickLower);
+
+      console.log("upperPrice: ", upperPrice)
+      console.log("lowerPrice: ", lowerPrice)
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////");
+
+      expect(10000 * (upperPrice - lowerPrice) / (lowerPrice + upperPrice)).to.be.approximately(width, width * 0.1);
+    });
   });
 });

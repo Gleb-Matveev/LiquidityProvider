@@ -81,15 +81,24 @@ contract LiquidityProvider {
         }
     }
 
-    function getBordersFromAssets(uint256 amount0ToMint, uint256 amount1ToMint, uint160 width, uint160 sqrtPriceX96) internal pure returns (uint160, uint160) {
-        uint160 pa = uint160(computeExpression(width, sqrtPriceX96, amount0ToMint, amount1ToMint));
-        uint160 pb = uint160(sqrt(FullMath.mulDiv(pa, pa * (width + 10000), (10000 - width))));
+    function getBordersFromAssets(uint256 amount0ToMint, uint256 amount1ToMint, uint160 width, uint160 sqrtPriceX96) internal pure returns (uint160 pa, uint160 pb) {
+        
+        if (amount0ToMint == 0) {
+            pb = sqrtPriceX96;
+            pa = uint160(sqrt(FullMath.mulDiv(FullMath.mulDiv(pb, pb, 1), (10000 - width), (10000 + width))));
+        } else if (amount1ToMint == 0) {
+            pa = sqrtPriceX96;
+            pb = uint160(sqrt(FullMath.mulDiv(FullMath.mulDiv(pa, pa, 1), (10000 + width), (10000 - width))));
+        } else {
+            pa = uint160(computeExpression(width, sqrtPriceX96, amount0ToMint, amount1ToMint));
+            pb = uint160(sqrt(FullMath.mulDiv(pa, pa * (width + 10000), (10000 - width))));
+        }
 
         console.log("pa: ", pa);
         console.log("p:  ", sqrtPriceX96);
         console.log("pb: ", pb);
 
-        return (uint160(pa), uint160(pb));
+        //return (uint160(pa), uint160(pb));
     }
 
     function computeExpression(
