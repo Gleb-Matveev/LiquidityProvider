@@ -1,5 +1,6 @@
 node_modules
 .env
+calc.py
 
 # Hardhat files
 /cache

@@ -3,6 +3,50 @@ import { expect } from "chai";
 import hre from "hardhat";
 import { deal } from "hardhat-deal";
 
+function sqrt(value) {
+  if (value < 0n) throw new Error("Negative BigInt");
+  if (value < 2n) return value;
+  
+  let x = value;
+  let y = (x + 1n) / 2n;
+  while (y < x) {
+      x = y;
+      y = (x + value / x) / 2n;
+  }
+  return x;
+}
+
+function getAmounts(liquidity, sqrtPriceX96, tickLower, tickUpper) {
+  liquidity = BigInt(liquidity);
+  sqrtPriceX96 = BigInt(sqrtPriceX96);
+  tickLower = BigInt(tickLower);
+  tickUpper = BigInt(tickUpper);
+
+  const Q96 = 2n ** 96n;
+
+  // Вычисляем корни тиков через BigInt (используем приближение через 1.0001 ** tick)
+  const sqrtRatioA = sqrt(BigInt(Math.floor(Number((1.0001 ** Number(tickLower)) * Number(Q96)))));
+  const sqrtRatioB = sqrt(BigInt(Math.floor(Number((1.0001 ** Number(tickUpper)) * Number(Q96)))));
+  const sqrtPrice = sqrtPriceX96;
+
+  let amount0 = 0n;
+  let amount1 = 0n;
+
+  if (sqrtPrice <= sqrtRatioA) {
+      amount0 = (liquidity * (sqrtRatioB - sqrtRatioA)) / (sqrtRatioA * sqrtRatioB);
+  } else if (sqrtPrice >= sqrtRatioB) {
+      amount1 = liquidity * (sqrtRatioB - sqrtRatioA);
+  } else {
+      amount0 = (liquidity * (sqrtRatioB - sqrtPrice)) / (sqrtPrice * sqrtRatioB);
+      amount1 = liquidity * (sqrtPrice - sqrtRatioA);
+  }
+
+  console.log(amount0);
+  console.log(amount1);
+  return { amount0, amount1 };
+}
+
+
 describe("LiquidityProvider", function () {
   async function deployContract() {
     const [owner, addr1] = await ethers.getSigners();
@@ -76,8 +120,65 @@ describe("LiquidityProvider", function () {
   });
 
   describe("Maths", function () {
-    const width = 5000;
-    it(`Should provide liquidity with width = 10`, async function () {
+    let width = 6000;
+    it(`Should provide liquidity with width = ${width}`, async function () {
+      const { liquidityProvider, nfpManager, pool, owner, token0, token1 } = await loadFixture(deployContract);
+
+      const transferAmount = ethers.parseEther("3");
+
+      const tx = await owner.sendTransaction({
+       to: liquidityProvider.getAddress(),
+       value: transferAmount,
+      });
+
+      await tx.wait();
+
+      const amount0 = await token0.balanceOf(owner);
+      const amount1 = await token1.balanceOf(owner);
+      const amountLP0 = await token0.balanceOf(liquidityProvider.getAddress());
+      const amountLP1 = await token1.balanceOf(liquidityProvider.getAddress());
+      const balance = await ethers.provider.getBalance(owner);
+      const balanceC = await ethers.provider.getBalance(liquidityProvider.getAddress());
+
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////");
+      console.log("a0: ", amount0);
+      console.log("a1: ", amount1);
+      console.log("width: ", width);
+      console.log("LP a0: ", amountLP0);
+      console.log("LP a1: ", amountLP1);
+      console.log("Balance of owner:", balance);
+      console.log("Contract address", await liquidityProvider.getAddress());
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////\n");
+    
+      await liquidityProvider.provideLiquidity(pool, amount0, amount1, width, {
+        gasLimit: 30000000, 
+      });
+
+      const positionId = await nfpManager.tokenOfOwnerByIndex(owner, 0);
+      const position = await nfpManager.positions(positionId);
+
+      const upperPrice = 1.0001 ** Number(position.tickUpper);
+      const lowerPrice = 1.0001 ** Number(position.tickLower);
+
+      const slot0 = await pool.slot0();
+      const sqrtPriceX96 = slot0.sqrtPriceX96;
+
+      console.log(`sqrtPriceX96: ${sqrtPriceX96.toString()}`);
+
+      // Вычисляем amount0 и amount1
+      const { amount0inpool, amount1inpool } = getAmounts(position.liquidity, sqrtPriceX96, position.tickLower, position.tickUpper);
+
+      console.log("amt0: ", amount0inpool);
+      console.log("amt1: ", amount1inpool);
+
+      console.log("upperPrice: ", upperPrice)
+      console.log("lowerPrice: ", lowerPrice)
+      console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////");
+
+      expect(10000 * (upperPrice - lowerPrice) / (lowerPrice + upperPrice)).to.be.approximately(width, width * 0.1);
+    });
+    /*width = 9000;
+    it(`Should provide liquidity with width = ${width}}`, async function () {
       const { liquidityProvider, nfpManager, pool, owner, token0, token1 } = await loadFixture(deployContract);
 
       const transferAmount = ethers.parseEther("3");
@@ -121,6 +222,6 @@ describe("LiquidityProvider", function () {
       console.log("///////////////////////////////////////////////////////////////////////////////////////////////////////");
 
       expect(10000 * (upperPrice - lowerPrice) / (lowerPrice + upperPrice)).to.be.approximately(width, width * 0.1);
-    });
+    });*/
   });
 });

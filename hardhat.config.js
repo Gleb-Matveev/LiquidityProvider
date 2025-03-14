@@ -14,7 +14,7 @@ const config = {
     hardhat: {
       forking: {
         url: process.env.ARBITRUM_URL,
-        block: 314239731,
+        blockNumber: 315304801,
         accountsBalance: "10000000000000000000000",
       },
     },
